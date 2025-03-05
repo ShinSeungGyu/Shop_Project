@@ -14,7 +14,7 @@ public class FileService {
 
     public String uploadFile(String uploadPath, String originalFileName, byte[] fileData) throws Exception {
 
-        UUID uuid = UUID.randomUUID(); //랜덤UUID
+        UUID uuid = UUID.randomUUID(); //랜덤 UUID
         String extension = originalFileName.substring(originalFileName.lastIndexOf(".")); //확장자 추출
         String savedFileName = uuid.toString() + extension; //저장될 파일 명
         String fileUploadFullUrl = uploadPath + "/" + savedFileName; //지정된 경로에 파일 저장할 url

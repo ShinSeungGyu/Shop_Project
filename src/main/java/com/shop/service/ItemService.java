@@ -29,7 +29,7 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final ItemImgService itemImgService;
     private final ItemImgRepository itemImgRepository;
-    //------------------------------------------------------------------------------------------------------
+
     public Long saveItem(ItemFormDto itemFormDto, List<MultipartFile> itemImgFileList) throws Exception {
         Item item = itemFormDto.createItem();
         itemRepository.save(item);
