@@ -32,7 +32,7 @@ public class ItemImgService {
         String imgUrl = "";
 
         //파일 업로드
-        if(!StringUtils.isEmpty(oriImgName)) { //oriImgName의 변수가 비어있지 않다면,
+        if(!StringUtils.isEmpty(oriImgName)) { //oriImgName 의 변수가 비어있지 않다면,
             imgName = fileService.uploadFile(itemImgLocation, oriImgName, itemImgFile.getBytes());
             imgUrl = "/images/item/" + imgName;
         }
