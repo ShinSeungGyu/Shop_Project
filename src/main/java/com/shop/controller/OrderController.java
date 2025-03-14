@@ -34,7 +34,7 @@ public class OrderController {
             for (FieldError fieldError: fieldErrors) {
                 sb.append(fieldError.getDefaultMessage());
             }
-            return new ResponseEntity<String>(sb.toString(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(sb.toString(), HttpStatus.BAD_REQUEST);
         }
 
         String email = principal.getName();
@@ -43,9 +43,9 @@ public class OrderController {
         try {
             orderId = orderService.order(orderDto, email);
         } catch(Exception e) {
-            return new ResponseEntity<String>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<Long>(orderId, HttpStatus.OK);
+        return new ResponseEntity<>(orderId, HttpStatus.OK);
     }
     //------------------------------------------------------------------------------------------------------------
 
@@ -57,5 +57,16 @@ public class OrderController {
         model.addAttribute("page", pageable.getPageNumber());
         model.addAttribute("maxPage", 5);
         return "order/orderHist";
+    }
+    //------------------------------------------------------------------------------------------------------------
+    //현재 사용자와 주문번호를 받아 주문자와 사용자가 일치하는지 검증 후 삭제를 진행
+    @PostMapping(value = "/order/{orderId}/cancel")
+    public @ResponseBody ResponseEntity cancelOrder(@PathVariable("orderId") Long orderId, Principal principal) {
+        if(!orderService.validateOrder(orderId, principal.getName())) {
+            return new ResponseEntity<>("주문 취소 권한이 없습니다.", HttpStatus.FORBIDDEN);
+        }
+
+        orderService.cancelOrder(orderId);
+        return new ResponseEntity<>(orderId, HttpStatus.OK);
     }
 }

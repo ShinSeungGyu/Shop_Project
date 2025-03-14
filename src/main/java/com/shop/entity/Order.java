@@ -56,4 +56,12 @@ public class Order extends BaseEntity {
         }
         return totalPrice;
     }
+
+    public void cancelOrder() { //주문에 들어있던 상품들을 모두 취소 상태로 변환
+        this.orderStatus = OrderStatus.CANCEL;
+
+        for(OrderItem orderItem:orderItems){
+            orderItem.cancel();
+        }
+    }
 }

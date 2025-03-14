@@ -1,32 +1,33 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layouts/layout1}" lang="ko">
+      layout:decorate="~{layouts/layout1}">
+
 <head>
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 
-<!--사용자 스크립트-->
+<!-- 사용자 스크립트 추가 -->
 <th:block layout:fragment="script">
     <script th:inline="javascript">
+        $(document).ready(function(){
 
-        $(document).ready(function() {
             calculateTotalPrice();
 
-            $("#count").change(function() {
+            $("#count").change( function(){
                 calculateTotalPrice();
             });
         });
 
-        function calculateTotalPrice() {
+        function calculateTotalPrice(){
             var count = $("#count").val();
-            var count = $("#price").val();
+            var price = $("#price").val();
             var totalPrice = price*count;
             $("#totalPrice").html(totalPrice + '원');
         }
 
-        function order() {
+        function order(){
             var token = $("meta[name='_csrf']").attr("content");
             var header = $("meta[name='_csrf_header']").attr("content");
 
@@ -39,26 +40,29 @@
             var param = JSON.stringify(paramData);
 
             $.ajax({
-                url : url,
-                type : "POST",
+                url      : url,
+                type     : "POST",
                 contentType : "application/json",
-                data : param,
-                beforeSend : function(xhr){ /*웹 브라우저에서 서버와 비동기적으로 데이터를 전송하고 받을 수 있게 해주는 JavaScript 객체*/
-                    xhr.setRequestHeader(header, token); /*요청을 보내기 전 헤더와 토큰을 설정한다.*/
+                data     : param,
+                beforeSend : function(xhr){
+                    /* 데이터를 전송하기 전에 헤더에 csrf값을 설정 */
+                    xhr.setRequestHeader(header, token);
                 },
                 dataType : "json",
-                cache : false,
-                success : function(result, status) {
-                    alert("주문이 완료되었습니다.);
+                cache   : false,
+                success  : function(result, status){
+                    alert("주문이 완료 되었습니다.");
                     location.href='/';
                 },
-                error : function(jqXHR, status, error) { /*jqXHR : AJAX 요청을 처리하기 위한 객체*/
-                    if(jqXHR.status == '401') {
+                error : function(jqXHR, status, error){
+
+                    if(jqXHR.status == '401'){
                         alert('로그인 후 이용해주세요');
                         location.href='/members/login';
-                    } else {
+                    } else{
                         alert(jqXHR.responseText);
                     }
+
                 }
             });
         }
@@ -93,18 +97,24 @@
     </style>
 </th:block>
 
-<div layout:fragment="content" style="margin-left:25%; margin-right:25%">
+<div layout:fragment="content" style="margin-left:25%;margin-right:25%">
+
     <input type="hidden" id="itemId" th:value="${item.id}">
+
     <div class="d-flex">
         <div class="repImgDiv">
-            <img th:src="${item.itemImgDtoList[0].imgUrl}" class="rounded repImg" th:alt="${item.itemNm}">
+            <img th:src="${item.itemImgDtoList[0].imgUrl}" class = "rounded repImg" th:alt="${item.itemNm}">
         </div>
         <div class="wd50">
-            <span th:if="${item.itemSellStatus == T(com.shop.constant.ItemSellStatus).SELL}" class="badge badge.primary mgb-15">판매중</span>
-            <span th:unless="${item.itemSellStatus == T(com.shop.constant.ItemSellStatus).SELL}" class="badge badge.primary mgb-15">품절</span>
+            <span th:if="${item.itemSellStatus == T(com.shop.constant.ItemSellStatus).SELL}" class="badge badge-primary mgb-15">
+                판매중
+            </span>
+            <span th:unless="${item.itemSellStatus == T(com.shop.constant.ItemSellStatus).SELL}" class="badge btn-danger mgb-15" >
+                품절
+            </span>
             <div class="h4" th:text="${item.itemNm}"></div>
-
             <hr class="my-4">
+
             <div class="text-right">
                 <div class="h4 text-danger text-left">
                     <input type="hidden" th:value="${item.price}" id="price" name="price">
@@ -117,8 +127,8 @@
                     <input type="number" name="count" id="count" class="form-control" value="1" min="1">
                 </div>
             </div>
-
             <hr class="my-4">
+
             <div class="text-right mgt-50">
                 <h5>결제 금액</h5>
                 <h3 name="totalPrice" id="totalPrice" class="font-weight-bold"></h3>

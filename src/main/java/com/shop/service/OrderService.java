@@ -9,12 +9,14 @@ import com.shop.repository.ItemRepository;
 import com.shop.repository.MemberRepository;
 import com.shop.repository.OrderRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.Lob;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thymeleaf.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +64,23 @@ public class OrderService {
         }
 
         return new PageImpl<OrderHistDto>(orderHistDtos, pageable, totalCount);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean validateOrder(Long orderId, String email) {
+        Member curMember = memberRepository.findByEmail(email); //전달받은 email로 사용자 확인
+        Order order = orderRepository.findById(orderId).orElseThrow(EntityNotFoundException::new); //주문 확인
+        Member savedMember = order.getMember(); //주문의 email을 가져옴
+
+        if(!StringUtils.equals(curMember.getEmail(), savedMember.getEmail())) { //두 정보가 일치하지 않는다면 실패
+            return false;
+        }
+        return true;
+    }
+
+    public void cancelOrder(Long orderId) { //주문번호가 존재한다면 해당 주문을 취소한다.
+        Order order = orderRepository.findById(orderId).orElseThrow(EntityNotFoundException::new);
+        order.cancelOrder();
     }
 
 }
