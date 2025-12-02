@@ -19,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -83,7 +85,7 @@ public class OrderService {
         order.cancelOrder();
     }
 
-    public Long orders(List<OrderDto> orderDtoList, String email){
+    public Map<String, Object> orders(List<OrderDto> orderDtoList, String email, String orderName, String orderId){
         Member member = memberRepository.findByEmail(email);
         List<OrderItem> orderItemList = new ArrayList<>();
 
@@ -96,7 +98,14 @@ public class OrderService {
         Order order = Order.createOrder(member, orderItemList);
         orderRepository.save(order);
 
-        return order.getId();
+        Map<String, Object> tossPaymentParams = new HashMap<>();
+        tossPaymentParams.put("amount", order.getTotalPrice());
+        tossPaymentParams.put("orderId", orderId);
+        tossPaymentParams.put("orderName", orderName);
+        tossPaymentParams.put("customerName", member.getName());
+        tossPaymentParams.put("customerEmail", member.getEmail());
+
+        return tossPaymentParams;
     }
 
 }
