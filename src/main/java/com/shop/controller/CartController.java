@@ -4,8 +4,13 @@ import com.shop.dto.CartDetailDto;
 import com.shop.dto.CartItemDto;
 import com.shop.dto.CartOrderDto;
 import com.shop.service.CartService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -14,14 +19,25 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.security.Principal;
 import java.util.List;
+
+import org.json.simple.JSONObject;
 
 @Controller
 @RequiredArgsConstructor
 public class CartController {
 
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final CartService cartService;
+    private static final String API_SECRET_KEY = "test_sk_jExPeJWYVQ1xBljzz4XvV49R5gvN";
 
     @PostMapping("/cart")
     public @ResponseBody ResponseEntity order(@RequestBody @Valid CartItemDto cartItemDto, BindingResult bindingResult, Principal principal){
@@ -88,7 +104,52 @@ public class CartController {
             }
         }
 
-        Long orderId = cartService.orderCartItem(cartOrderDtoList, principal.getName());
-        return new ResponseEntity<>(orderId, HttpStatus.OK);
+        Map<String, Object> order = cartService.orderCartItem(cartOrderDtoList, principal.getName());
+        System.out.print(order);
+        return new ResponseEntity<>(order, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = {"/confirm/payment"})
+    public ResponseEntity<JSONObject> confirmPayment(HttpServletRequest request, @RequestBody String jsonBody) throws Exception {
+        JSONObject response = sendRequest(parseRequestData(jsonBody), API_SECRET_KEY, "https://api.tosspayments.com/v2/payments/confirm");
+        int statusCode = response.containsKey("error") ? 400 : 200;
+        return ResponseEntity.status(statusCode).body(response);
+    }
+
+    private JSONObject parseRequestData(String jsonBody) {
+        try {
+            return (JSONObject) new JSONParser().parse(jsonBody);
+        } catch (ParseException e) {
+            logger.error("JSON Parsing Error", e);
+            return new JSONObject();
+        }
+    }
+
+    private JSONObject sendRequest(JSONObject requestData, String secretKey, String urlString) throws IOException {
+        HttpURLConnection connection = createConnection(secretKey, urlString);
+        try (OutputStream os = connection.getOutputStream()) {
+            os.write(requestData.toString().getBytes(StandardCharsets.UTF_8));
+        }
+
+        try (InputStream responseStream = connection.getResponseCode() == 200 ? connection.getInputStream() : connection.getErrorStream();
+             Reader reader = new InputStreamReader(responseStream, StandardCharsets.UTF_8)) {
+            return (JSONObject) new JSONParser().parse(reader);
+        } catch (Exception e) {
+            logger.error("Error reading response", e);
+            JSONObject errorResponse = new JSONObject();
+            errorResponse.put("error", "Error reading response");
+            return errorResponse;
+        }
+    }
+
+    private HttpURLConnection createConnection(String secretKey, String urlString) throws IOException {
+        URL url = new URL(urlString);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestProperty("Authorization", "Basic " + Base64.getEncoder().encodeToString((secretKey + ":").getBytes(StandardCharsets.UTF_8)));
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        return connection;
     }
 }
+
