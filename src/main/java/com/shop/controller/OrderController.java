@@ -25,7 +25,7 @@ import java.util.Optional;
 public class OrderController {
 
     private final OrderService orderService;
-
+    //itemDtl에서 바로 구매할 경우 사용되던 함수 >> 삭제 예정
     @PostMapping("/order")
     public @ResponseBody ResponseEntity order(@RequestBody @Valid OrderDto orderDto, BindingResult bindingResult, Principal principal) {
         if(bindingResult.hasErrors()) {
@@ -48,7 +48,7 @@ public class OrderController {
         return new ResponseEntity<>(orderId, HttpStatus.OK);
     }
     //------------------------------------------------------------------------------------------------------------
-
+    //구매이력
     @GetMapping(value = {"/orders", "/orders/{page}"})
     public String orderHist(@PathVariable("page")Optional<Integer> page, Principal principal, Model model) {
         Pageable pageable = PageRequest.of(page.isPresent() ? page.get() : 0, 4);
@@ -65,7 +65,6 @@ public class OrderController {
         if(!orderService.validateOrder(orderId, principal.getName())) {
             return new ResponseEntity<>("주문 취소 권한이 없습니다.", HttpStatus.FORBIDDEN);
         }
-
         orderService.cancelOrder(orderId);
         return new ResponseEntity<>(orderId, HttpStatus.OK);
     }
