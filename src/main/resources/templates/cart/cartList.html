@@ -2,16 +2,21 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layouts/layout1}" lang="ko">
-
 <head>
+  <meta charset="UTF-8">
+  <title>장바구니 결제</title>
   <meta name="_csrf" th:content="${_csrf.token}"/>
   <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-</head>
 
+</head>
 <!-- 사용자 스크립트 추가 -->
 <th:block layout:fragment="script">
-
-  <script th:inline="javascript">
+  <script src="https://js.tosspayments.com/v2/standard"></script>
+  <script th:inline="javascript" >
+    const clientKey = "test_ck_PBal2vxj8146PYkMGPNRr5RQgOAN";
+    const customerKey = "iZjdWhMYoBRmL5XZCTDan";
+    const tossPayments = TossPayments(clientKey);
+    const payment = tossPayments.payment({ customerKey });
 
     $(document).ready(function(){
         $("input[name=cartChkBox]").change( function(){
@@ -112,57 +117,80 @@
             }
         });
     }
+    async function orders() {
+      var token = $("meta[name='_csrf']").attr("content");
+      var header = $("meta[name='_csrf_header']").attr("content");
 
-    function orders(){
-        var token = $("meta[name='_csrf']").attr("content");
-        var header = $("meta[name='_csrf_header']").attr("content");
+      var url = "/cart/orders"; // 서버에서 주문을 생성하고 결제 정보를 반환할 엔드포인트
+      var dataList = new Array();
+      var paramData = new Object();
 
-        var url = "/cart/orders";
+      $("input[name=cartChkBox]:checked").each(function() {
+        var cartItemId = $(this).val();
+        var data = new Object();
+        data["cartItemId"] = cartItemId;
+        dataList.push(data);
+      });
 
-        var dataList = new Array();
-        var paramData = new Object();
+      paramData['cartOrderDtoList'] = dataList;
 
-        $("input[name=cartChkBox]:checked").each(function() {
-            var cartItemId = $(this).val();
-            var data = new Object();
-            data["cartItemId"] = cartItemId;
-            dataList.push(data);
-        });
+      var param = JSON.stringify(paramData);
 
-        paramData['cartOrderDtoList'] = dataList;
-
-        var param = JSON.stringify(paramData);
-
-        $.ajax({
-            url      : url,
-            type     : "POST",
-            contentType : "application/json",
-            data     : param,
-            beforeSend : function(xhr){
-                /* 데이터를 전송하기 전에 헤더에 csrf 값을 설정 */
-                xhr.setRequestHeader(header, token);
-            },
-            dataType : "json",
-            cache   : false,
-            success  : function(result, status){
-                alert("주문이 완료 되었습니다.");
-                location.href='/orders';
-            },
-            error : function(jqXHR, status, error){
-
-                if(jqXHR.status == '401'){
-                    alert('로그인 후 이용해주세요');
-                    location.href='/members/login';
-                } else{
-                    alert(jqXHR.responseJSON.message);
-                }
-
-            }
-        });
+      $.ajax({
+        url: url,
+        type: "POST",
+        contentType: "application/json",
+        data: param,
+        beforeSend: function(xhr) { //beforeSend : Ajax 요청이 실행되기 직전에 실행된다.
+            xhr.setRequestHeader(header, token); //요청헤더에 CSRF 토큰을 포함한다.
+        },
+        dataType: "json",
+        cache: false,
+        success: function(result, status) {
+          if (result && result.orderId && result.amount && result.orderName) {
+            payment.requestPayment(
+            {
+              method: "CARD",
+              amount: {
+                currency: "KRW",
+                value: result.amount, // Toss SDK는 value에 long 값을 받습니다. 백엔드에서 longValue()로 넘겨주는 것이 좋습니다.
+              },
+              orderId: result.orderId,
+              orderName: result.orderName,
+              successUrl: window.location.origin + "/payments/success", // <--- (주요 개선점 2)
+              failUrl: window.location.origin + "/payments/fail",       // <--- (주요 개선점 2)
+              customerName: result.customerName, // 백엔드에서 이 필드를 넘겨줘야 합니다.
+              customerEmail: result.customerEmail, // 백엔드에서 이 필드를 넘겨줘야 합니다.
+              card: {
+                useEscrow: false,
+                flowMode: "DEFAULT",
+                useCardPoint: false,
+                useAppCardOnly: false,
+              },
+            }).catch(function(error) {
+              if (error.code === 'USER_CANCEL') {
+                alert('결제를 취소하셨습니다.');
+              } else {
+                alert('결제에 실패하였습니다: ' + error.message); // error.Message -> error.message (자바스크립트 표준)
+                console.error('결제 실패:', error);
+              }
+            });
+          } else {
+              console.error("결제 정보를 받아오는데 실패했습니다. result:", result);
+              alert("결제 정보를 받아오는데 실패했습니다.");
+          }
+        },
+        error: function(jqXHR, status, error) {
+          if (jqXHR.status == '401') {
+            alert('로그인 후 이용해주세요');
+            location.href = '/members/login';
+          } else {
+                alert(jqXHR.responseJSON.message || '주문 처리 중 오류가 발생했습니다.');
+          }
+        }
+      });
     }
-
   </script>
-
 </th:block>
 
 <!-- 사용자 CSS 추가 -->
