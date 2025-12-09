@@ -1,10 +1,17 @@
 package com.shop.controller;
 
+import com.shop.dto.CartOrderDto;
 import com.shop.dto.OrderDto;
 import com.shop.dto.OrderHistDto;
+import com.shop.entity.*;
+import com.shop.repository.CartItemRepository;
+import com.shop.repository.CartRepository;
+import com.shop.repository.OrderRepository;
+import com.shop.service.CartService;
 import com.shop.service.OrderService;
-import jakarta.validation.Valid;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,11 +19,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,27 +38,66 @@ import java.util.Optional;
 public class OrderController {
 
     private final OrderService orderService;
-    //itemDtl에서 바로 구매할 경우 사용되던 함수 >> 삭제 예정
-    @PostMapping("/order")
-    public @ResponseBody ResponseEntity order(@RequestBody @Valid OrderDto orderDto, BindingResult bindingResult, Principal principal) {
-        if(bindingResult.hasErrors()) {
-            StringBuilder sb = new StringBuilder();
-            List<FieldError> fieldErrors = bindingResult.getFieldErrors();
-            for (FieldError fieldError: fieldErrors) {
-                sb.append(fieldError.getDefaultMessage());
-            }
-            return new ResponseEntity<>(sb.toString(), HttpStatus.BAD_REQUEST);
-        }
+    private final OrderRepository orderRepository;
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
 
-        String email = principal.getName();
-        Long orderId;
+    @Value("${toss.payments.secretKey}")
+    private String tossPaymentsSecretKey;
 
+    @Value("${toss.payments.api.url}")
+    private String tossPaymentsApiUrl;
+
+    @GetMapping("/order/success") // "/order/success" 경로의 GET 요청을 처리
+    public String paymentsSuccess(@RequestParam String paymentKey, @RequestParam String orderId, @RequestParam Long amount, Model model) {
+        String requestBodyJson = String.format("{\"paymentKey\":\"%s\",\"orderId\":\"%s\",\"amount\":%d}", paymentKey, orderId, amount);
+        HttpRequest request = HttpRequest.newBuilder() //Toss에 결제 승인을 요청하는 코드
+                .uri(URI.create(tossPaymentsApiUrl))
+                .header("Authorization", "Basic " + encodeSecretKeyForBasicAuth(tossPaymentsSecretKey))
+                .header("Content-Type", "application/json")
+                .method("POST", HttpRequest.BodyPublishers.ofString(requestBodyJson))
+                .build();
         try {
-            orderId = orderService.order(orderDto, email);
-        } catch(Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            model.addAttribute("response", response.body());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
         }
-        return new ResponseEntity<>(orderId, HttpStatus.OK);
+        //결제 승인까지 끝났으니 장바구니에서 주문된 아이템들을 제거하는 코드
+        Order order = orderRepository.findOrder(orderId);
+        Member member = order.getMember();
+        List<OrderItem> orderItems = order.getOrderItems();
+        Cart cart = cartRepository.findByMemberId(member.getId());
+        for (OrderItem orderItem : orderItems) { //주문한 상품들을 장바구니에서 제거
+            Item orderedItem = orderItem.getItem();;
+            CartItem cartItem = cartItemRepository.findByCartAndItem(cart, orderedItem).orElseThrow(EntityNotFoundException::new);
+            cartItemRepository.delete(cartItem);
+        }
+        
+        // 클라이언트에서 전달받은 파라미터들을 Model에 추가하여 Thymeleaf 템플릿으로 전달합니다.
+        model.addAttribute("paymentKey", paymentKey);
+        model.addAttribute("orderId", orderId);
+        model.addAttribute("amount", amount);
+        return "order/success";
+    }
+
+    public static String encodeSecretKeyForBasicAuth(String tossPaymentsSecretKey) {
+        // 1. Secret Key 뒤에 콜론(:)을 붙입니다. (HTTP Basic Auth 표준)
+        String credentials = tossPaymentsSecretKey + ":";
+        // 2. 이 문자열을 UTF-8 바이트 배열로 변환합니다.
+        byte[] credentialsBytes = credentials.getBytes(StandardCharsets.UTF_8);
+        // 3. 바이트 배열을 Base64로 인코딩합니다.
+        String encodedAuthKey = Base64.getEncoder().encodeToString(credentialsBytes);
+
+        return encodedAuthKey;
+    }
+
+    @GetMapping("/order/fail")
+    public String paymentsFail(@RequestParam String code, @RequestParam String message, @RequestParam String orderId, Model model) {
+        model.addAttribute("errorMessage", message);
+        model.addAttribute("errorCode", code);
+        model.addAttribute("orderId", orderId);
+        return "order/fail"; // src/main/resources/templates/order/fail.html
     }
     //------------------------------------------------------------------------------------------------------------
     //구매이력

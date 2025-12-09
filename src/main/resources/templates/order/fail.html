@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="kr">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/layout1}" lang="ko">
 <head>
   <meta charset="utf-8" />
   <link rel="icon" href="https://static.toss.im/icons/png/4x/icon-toss-logo.png" />
@@ -16,26 +18,16 @@
 
   <div class="p-grid typography--p" style="margin-top: 50px">
     <div class="p-grid-col text--left"><b>에러메시지</b></div>
-    <div class="p-grid-col text--right" id="message"></div>
+    <div class="p-grid-col text--right" id="message">[[${message}]]</div>
   </div>
   <div class="p-grid typography--p" style="margin-top: 10px">
     <div class="p-grid-col text--left"><b>에러코드</b></div>
-    <div class="p-grid-col text--right" id="code"></div>
+    <div class="p-grid-col text--right" id="code">[[${code}]]</div>
   </div>
   <div class="p-grid">
     <button class="button p-grid-col5" onclick="location.href='https://docs.tosspayments.com/guides/v2/payment-widget/integration';">연동 문서</button>
     <button class="button p-grid-col5" onclick="location.href='https://discord.gg/A4fRFXQhRu';" style="background-color: #e8f3ff; color: #1b64da">실시간 문의</button>
   </div>
 </div>
-
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-
-  const codeElement = document.getElementById("code");
-  const messageElement = document.getElementById("message");
-
-  codeElement.textContent = urlParams.get("code");
-  messageElement.textContent = urlParams.get("message");
-</script>
 </body>
 </html>

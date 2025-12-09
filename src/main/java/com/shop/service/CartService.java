@@ -115,16 +115,7 @@ public class CartService {
             // 예: "멋진 상품-789 외 2건"
             orderName = itemNames.get(0) + " 외 " + (itemCount - 1) + "건";
         }
-        String orderId = "order-" + UUID.randomUUID().toString();
-
-        System.out.print(orderName);
-        Map<String, Object> tossOrder = orderService.orders(orderDtoList, email, orderName, orderId); //장바구니에 담은 상품을 주문
-
-        for (CartOrderDto cartOrderDto : cartOrderDtoList) { //주문한 상품들을 장바구니에서 제거
-            CartItem cartItem = cartItemRepository.findById(cartOrderDto.getCartItemId()).orElseThrow(EntityNotFoundException::new);
-            cartItemRepository.delete(cartItem);
-        }
-
+        Map<String, Object> tossOrder = orderService.orders(orderDtoList, email, orderName); //장바구니에 담은 상품을 주문
         return tossOrder;
     }
 }

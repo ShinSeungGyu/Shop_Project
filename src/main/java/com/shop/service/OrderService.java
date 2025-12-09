@@ -9,7 +9,6 @@ import com.shop.repository.ItemRepository;
 import com.shop.repository.MemberRepository;
 import com.shop.repository.OrderRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.Lob;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -85,7 +84,7 @@ public class OrderService {
         order.cancelOrder();
     }
 
-    public Map<String, Object> orders(List<OrderDto> orderDtoList, String email, String orderName, String orderId){
+    public Map<String, Object> orders(List<OrderDto> orderDtoList, String email, String orderName){
         Member member = memberRepository.findByEmail(email);
         List<OrderItem> orderItemList = new ArrayList<>();
 
@@ -100,7 +99,7 @@ public class OrderService {
 
         Map<String, Object> tossPaymentParams = new HashMap<>();
         tossPaymentParams.put("amount", order.getTotalPrice());
-        tossPaymentParams.put("orderId", orderId);
+        tossPaymentParams.put("orderId", order.getTossOrderId());
         tossPaymentParams.put("orderName", orderName);
         tossPaymentParams.put("customerName", member.getName());
         tossPaymentParams.put("customerEmail", member.getEmail());

@@ -153,14 +153,14 @@
               method: "CARD",
               amount: {
                 currency: "KRW",
-                value: result.amount, // Toss SDK는 value에 long 값을 받습니다. 백엔드에서 longValue()로 넘겨주는 것이 좋습니다.
+                value: result.amount,
               },
               orderId: result.orderId,
               orderName: result.orderName,
-              successUrl: window.location.origin + "/payments/success", // <--- (주요 개선점 2)
-              failUrl: window.location.origin + "/payments/fail",       // <--- (주요 개선점 2)
-              customerName: result.customerName, // 백엔드에서 이 필드를 넘겨줘야 합니다.
-              customerEmail: result.customerEmail, // 백엔드에서 이 필드를 넘겨줘야 합니다.
+              successUrl: window.location.origin + "/order/success",
+              failUrl: window.location.origin + "/order/fail",
+              customerName: result.customerName,
+              customerEmail: result.customerEmail,
               card: {
                 useEscrow: false,
                 flowMode: "DEFAULT",

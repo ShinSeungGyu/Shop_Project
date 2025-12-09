@@ -1,11 +1,15 @@
 package com.shop.repository;
 
 import com.shop.dto.CartDetailDto;
+import com.shop.entity.Cart;
 import com.shop.entity.CartItem;
+import com.shop.entity.Item;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
+
 
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     CartItem findByCartIdAndItemId(Long cartId, Long itemId);
@@ -16,4 +20,6 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
             "where ci.cart.id = :cartId " + "and im.item.id = ci.item.id " + "and im.repimgYn = 'Y' " +
             "order by ci.regTime desc")
     List<CartDetailDto> findCartDetailDtoList(Long cartId);
+
+    Optional<CartItem> findByCartAndItem(Cart cart, Item item);
 }

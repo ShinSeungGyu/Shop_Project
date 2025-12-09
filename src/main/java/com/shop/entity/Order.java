@@ -2,6 +2,7 @@ package com.shop.entity;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import com.shop.constant.OrderStatus;
 
@@ -24,6 +25,9 @@ public class Order extends BaseEntity {
     @JoinColumn(name="member_id")
     private Member member;
 
+    @Column(name = "toss_order_id", unique = true, nullable = false, length = 64)
+    private String tossOrderId; // Toss에서 사용하는 문자열 orderId
+
     private LocalDateTime orderDate;
 
     @Enumerated(EnumType.STRING)
@@ -40,6 +44,7 @@ public class Order extends BaseEntity {
     public static Order createOrder(Member member, List<OrderItem> orderItemList) {
         Order order = new Order();
         order.setMember(member);
+        order.setTossOrderId("order-" + UUID.randomUUID().toString());
         for(OrderItem orderItem: orderItemList) {
             order.addOrderItem(orderItem);
         }
