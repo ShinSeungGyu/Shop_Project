@@ -1,13 +1,9 @@
 package com.shop.controller;
-
-import com.shop.dto.CartOrderDto;
-import com.shop.dto.OrderDto;
 import com.shop.dto.OrderHistDto;
 import com.shop.entity.*;
 import com.shop.repository.CartItemRepository;
 import com.shop.repository.CartRepository;
 import com.shop.repository.OrderRepository;
-import com.shop.service.CartService;
 import com.shop.service.OrderService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.net.URI;
@@ -64,14 +59,20 @@ public class OrderController {
             e.printStackTrace();
         }
         //결제 승인까지 끝났으니 장바구니에서 주문된 아이템들을 제거하는 코드
-        Order order = orderRepository.findOrder(orderId);
+        Order order = orderRepository.findTossOrder(orderId);
         Member member = order.getMember();
         List<OrderItem> orderItems = order.getOrderItems();
         Cart cart = cartRepository.findByMemberId(member.getId());
         for (OrderItem orderItem : orderItems) { //주문한 상품들을 장바구니에서 제거
             Item orderedItem = orderItem.getItem();;
+            int orderItemCount = orderItem.getCount();
             CartItem cartItem = cartItemRepository.findByCartAndItem(cart, orderedItem).orElseThrow(EntityNotFoundException::new);
-            cartItemRepository.delete(cartItem);
+            if (cartItem.getCount() > orderItemCount) {
+                cartItem.minusCount(orderItemCount);
+            }
+            else {
+                cartItemRepository.delete(cartItem);
+            }
         }
         
         // 클라이언트에서 전달받은 파라미터들을 Model에 추가하여 Thymeleaf 템플릿으로 전달합니다.
@@ -97,6 +98,8 @@ public class OrderController {
         model.addAttribute("errorMessage", message);
         model.addAttribute("errorCode", code);
         model.addAttribute("orderId", orderId);
+        Order order = orderRepository.findTossOrder(orderId);
+        orderService.cancelOrder(order.getId());
         return "order/fail"; // src/main/resources/templates/order/fail.html
     }
     //------------------------------------------------------------------------------------------------------------

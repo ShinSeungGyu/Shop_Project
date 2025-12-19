@@ -4,13 +4,8 @@ import com.shop.dto.CartDetailDto;
 import com.shop.dto.CartItemDto;
 import com.shop.dto.CartOrderDto;
 import com.shop.service.CartService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -19,17 +14,9 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
 import java.util.Map;
 import java.security.Principal;
 import java.util.List;
-
-import org.json.simple.JSONObject;
 
 @Controller
 @RequiredArgsConstructor
