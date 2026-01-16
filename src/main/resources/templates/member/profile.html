@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/layout1}" lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>개인정보 수정</title>
+  <th:block>
+    <script th:inline="javascript">
+      // successMessage가 있다면 alert 표시
+      var successMessage = [[${successMessage}]];
+      if (successMessage != null) {
+          alert(successMessage);
+      }
+
+      // errorMessage가 있다면 alert 표시
+      var errorMessage = [[${errorMessage}]];
+      if (errorMessage != null) {
+          alert(errorMessage);
+      }
+
+      function goPopup(){
+        var pop = window.open("/jusoPopup","pop","width=570,height=420, scrollbars=yes, resizable=yes");
+
+        // 모바일 웹인 경우, 호출된 페이지(jusopopup.jsp)에서 실제 주소검색URL(https://business.juso.go.kr/addrlink/addrMobileLinkUrl.do)를 호출하게 됩니다.
+        //var pop = window.open("/popup/jusoPopup.jsp","pop","scrollbars=yes, resizable=yes");
+      }
+
+      function jusoCallBack(roadFullAddr,roadAddrPart1,addrDetail,roadAddrPart2,engAddr, jibunAddr, zipNo, admCd, rnMgtSn, bdMgtSn
+						, detBdNmList, bdNm, bdKdcd, siNm, sggNm, emdNm, liNm, rn, udrtYn, buldMnnm, buldSlno, mtYn, lnbrMnnm, lnbrSlno, emdNo){
+        // 팝업페이지에서 주소입력한 정보를 받아서, 현 페이지에 정보를 등록합니다.
+        document.getElementById("roadFullAddr").value = roadFullAddr;
+      }
+    </script>
+  </th:block>
+
+
+  <th:block layout:fragment="css">
+    <style>
+      .container { max-width: 600px; margin: auto; padding: 30px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+      h1 { color: #333; text-align: center; margin-bottom: 30px; }
+      .form-group { margin-bottom: 20px; }
+      label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+      input[type="text"], input[type="email"], input[type="password"] {
+          width: calc(100%); /* Padding 고려 */
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 16px;
+          box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
+      }
+      input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+          border-color: #007bff;
+          outline: none;
+      }
+      .update {
+          display: block;
+          width: 100%;
+          padding: 12px 20px;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          font-size: 18px;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+      }
+      button:hover {
+          background-color: #0056b3;
+      }
+      .error-message {
+          color: #dc3545;
+          font-size: 14px;
+          margin-top: 5px;
+      }
+      .info-text {
+          font-size: 14px;
+          color: #888;
+          margin-top: 5px;
+      }
+    </style>
+  </th:block>
+</head>
+
+<div layout:fragment="content">
+  <div class="container">
+    <h1>개인정보 수정</h1>
+
+    <!-- 현재 사용자 정보 (예: Spring Security에서 UserDetails를 통해 접근) -->
+    <p class="info-text">안녕하세요, <span th:text="${member.name}">님</span>!</p>
+
+    <!-- 개인정보 수정 폼 -->
+    <form th:action="@{/members/profile}" th:object="${memberProfileDto}" method="post">
+      <div class="form-group">
+        <label th:for="name">이름</label>
+        <!-- 소셜 로그인으로 가져온 이름은 수정 불가능하게 할 수 있습니다. -->
+        <input type="text" th:id="name" th:field="*{name}" readonly>
+        <p class="info-text">소셜 로그인 정보로, 여기서는 수정할 수 없습니다.</p>
+        <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}" class="error-message"></p>
+      </div>
+
+      <div class="form-group">
+        <label th:for="email">이메일</label>
+        <!-- 소셜 로그인으로 가져온 이메일은 수정 불가능하게 할 수 있습니다. -->
+        <input type="email" th:id="email" th:field="*{email}" readonly>
+        <p class="info-text">소셜 로그인 정보로, 여기서는 수정할 수 없습니다.</p>
+        <p th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="error-message"></p>
+      </div>
+
+      <div class="form-group">
+        <div class="d-flex align-items-center mb-2"> <!-- 라벨과 버튼을 한 줄에 배치하고 수직 중앙 정렬 -->
+          <label th:for="address" class="col-form-label mr-2">주소</label> <!-- Bootstrap 폼 라벨 스타일, 오른쪽 마진 -->
+          <input type="button" value="주소검색" onclick="goPopup();" class="btn btn-outline-secondary btn-sm"> <!-- 버튼 스타일 -->
+        </div>
+        <!-- 주소 입력 필드는 아래에 한 줄 전체를 차지 -->
+        <input type="text" id="roadFullAddr" name="roadFullAddr" th:field="*{address}" class="form-control" readonly>
+        <p th:if="${#fields.hasErrors('address')}" th:errors="*{address}" class="error-message"></p>
+      </div>
+      <!-- 비밀번호 변경은 별도 폼 또는 필드로 추가할 수 있습니다. -->
+      <!-- <div class="form-group">
+          <label for="currentPassword">현재 비밀번호</label>
+          <input type="password" id="currentPassword" th:field="*{currentPassword}">
+      </div>
+      <div class="form-group">
+          <label for="newPassword">새 비밀번호</label>
+          <input type="password" id="newPassword" th:field="*{newPassword}">
+      </div>
+      <div class="form-group">
+          <label for="confirmNewPassword">새 비밀번호 확인</label>
+          <input type="password" id="confirmNewPassword" th:field="*{confirmNewPassword}">
+      </div> -->
+
+      <button type="submit" class="update">정보 수정</button>
+    </form>
+  </div>
+</div>
+
+</html>

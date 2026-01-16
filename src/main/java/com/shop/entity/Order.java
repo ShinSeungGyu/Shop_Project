@@ -28,6 +28,9 @@ public class Order extends BaseEntity {
     @Column(name = "toss_order_id", unique = true, nullable = false, length = 64)
     private String tossOrderId; // Toss에서 사용하는 문자열 orderId
 
+    @Column(name = "toss_paymentKey")
+    private String tossPaymentKey;
+
     private LocalDateTime orderDate;
 
     @Enumerated(EnumType.STRING)

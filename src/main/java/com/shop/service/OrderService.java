@@ -34,7 +34,7 @@ public class OrderService {
 
     public Long order(OrderDto orderDto,String email) {
         Item item = itemRepository.findById(orderDto.getItemId()).orElseThrow(EntityNotFoundException::new);
-        Member member = memberRepository.findByEmail(email);
+        Member member = memberRepository.findByEmail(email).orElse(null);
 
         List<OrderItem> orderItemList = new ArrayList<>();
         OrderItem orderItem = OrderItem.createOrderItem(item, orderDto.getCount());
@@ -69,7 +69,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public boolean validateOrder(Long orderId, String email) {
-        Member curMember = memberRepository.findByEmail(email); //전달받은 email로 사용자 확인
+        Member curMember = memberRepository.findByEmail(email).orElse(null); //전달받은 email로 사용자 확인
         Order order = orderRepository.findById(orderId).orElseThrow(EntityNotFoundException::new); //주문 확인
         Member savedMember = order.getMember(); //주문의 email을 가져옴
 
@@ -79,13 +79,15 @@ public class OrderService {
         return true;
     }
 
-    public void cancelOrder(Long orderId) { //주문번호가 존재한다면 해당 주문을 취소한다.
+    //주문번호가 존재한다면 해당 주문을 취소한다.
+    public void cancelOrder(Long orderId) {
+        System.out.println(orderId);
         Order order = orderRepository.findById(orderId).orElseThrow(EntityNotFoundException::new);
         order.cancelOrder();
     }
-
+    //주문을 생성하고, Toss형식에 맞춰 파라미터를 반환
     public Map<String, Object> orders(List<OrderDto> orderDtoList, String email, String orderName){
-        Member member = memberRepository.findByEmail(email);
+        Member member = memberRepository.findByEmail(email).orElse(null);
         List<OrderItem> orderItemList = new ArrayList<>();
 
         for(OrderDto orderDto : orderDtoList){

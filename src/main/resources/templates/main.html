@@ -57,6 +57,12 @@
               <h4 class="card-title">[[${item.itemNm}]]</h4>
               <p class="card-text">[[${item.itemDetail}]]</p>
               <h3 class="card-title text-danger">[[${item.price}]]원</h3>
+              <span th:if="${item.itemSellStatus == T(com.shop.constant.ItemSellStatus).SELL}" class="badge badge-primary mgb-15">
+                판매중
+              </span>
+              <span th:unless="${item.itemSellStatus == T(com.shop.constant.ItemSellStatus).SELL}" class="badge btn-danger mgb-15" >
+                품절
+              </span>
             </div>
           </a>
         </div>

@@ -35,7 +35,7 @@ public class CartService {
 
     public Long addCart(CartItemDto cartItemDto, String email) {
         Item item = itemRepository.findById(cartItemDto.getItemId()).orElseThrow(EntityNotFoundException::new); //장바구니에 담을 상품
-        Member member = memberRepository.findByEmail(email); //현재 로그인 회원 조회
+        Member member = memberRepository.findByEmail(email).orElse(null); //현재 로그인 회원 조회
 
         Cart cart = cartRepository.findByMemberId(member.getId()); //회원의 장바구니를 조회
         if (cart == null) { //조회된 장바구니가 없다면
@@ -59,7 +59,7 @@ public class CartService {
     public List<CartDetailDto> getCartList(String email) {
         List<CartDetailDto> cartDetailDtoList = new ArrayList<>();
 
-        Member member = memberRepository.findByEmail(email);
+        Member member = memberRepository.findByEmail(email).orElse(null);
         Cart cart = cartRepository.findByMemberId(member.getId());
         if (cart == null) {
             return cartDetailDtoList;
@@ -70,7 +70,7 @@ public class CartService {
 
     @Transactional(readOnly = true)
     public boolean validateCartItem(Long cartItemId, String email) {
-        Member curMember = memberRepository.findByEmail(email);
+        Member curMember = memberRepository.findByEmail(email).orElse(null);
         CartItem cartItem = cartItemRepository.findById(cartItemId).orElseThrow(EntityNotFoundException::new);
         Member savedMember = cartItem.getCart().getMember();
 

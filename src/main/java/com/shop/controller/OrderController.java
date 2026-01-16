@@ -60,11 +60,12 @@ public class OrderController {
         }
         //결제 승인까지 끝났으니 장바구니에서 주문된 아이템들을 제거하는 코드
         Order order = orderRepository.findTossOrder(orderId);
+        order.setTossPaymentKey(paymentKey);
         Member member = order.getMember();
         List<OrderItem> orderItems = order.getOrderItems();
         Cart cart = cartRepository.findByMemberId(member.getId());
         for (OrderItem orderItem : orderItems) { //주문한 상품들을 장바구니에서 제거
-            Item orderedItem = orderItem.getItem();;
+            Item orderedItem = orderItem.getItem();
             int orderItemCount = orderItem.getCount();
             CartItem cartItem = cartItemRepository.findByCartAndItem(cart, orderedItem).orElseThrow(EntityNotFoundException::new);
             if (cartItem.getCount() > orderItemCount) {
@@ -119,6 +120,20 @@ public class OrderController {
     public @ResponseBody ResponseEntity cancelOrder(@PathVariable("orderId") Long orderId, Principal principal) {
         if(!orderService.validateOrder(orderId, principal.getName())) {
             return new ResponseEntity<>("주문 취소 권한이 없습니다.", HttpStatus.FORBIDDEN);
+        }
+        Optional<Order> order = orderRepository.findById(orderId);
+        String tossPaymentKey = order.get().getTossPaymentKey();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://api.tosspayments.com/v1/payments/"+ tossPaymentKey +"/cancel"))
+                .header("Authorization", "Basic " + encodeSecretKeyForBasicAuth(tossPaymentsSecretKey))
+                .header("Content-Type", "application/json")
+                .method("POST", HttpRequest.BodyPublishers.ofString("{\"cancelReason\":\"구매자 변심\"}"))
+                .build();
+        try {
+            HttpResponse<String> response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println(response);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
         }
         orderService.cancelOrder(orderId);
         return new ResponseEntity<>(orderId, HttpStatus.OK);
