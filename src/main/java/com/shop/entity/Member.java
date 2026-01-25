@@ -10,6 +10,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import com.shop.constant.Role;
 import com.shop.dto.MemberFormDto;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name="member")
 @Getter
@@ -32,6 +35,12 @@ public class Member extends BaseEntity{
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @OneToOne(mappedBy = "member", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Cart cart;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.REMOVE)
+    private List<Order> orders = new ArrayList<>();
 
     public static Member createMember(MemberFormDto memberForm, PasswordEncoder passwordEncoder) {
         Member member = new Member();

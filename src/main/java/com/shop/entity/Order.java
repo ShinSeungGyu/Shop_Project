@@ -23,7 +23,7 @@ public class Order extends BaseEntity {
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="member_id")
-    private Member member;
+    private Member member;  
 
     @Column(name = "toss_order_id", unique = true, nullable = false, length = 64)
     private String tossOrderId; // Toss에서 사용하는 문자열 orderId
@@ -47,7 +47,7 @@ public class Order extends BaseEntity {
     public static Order createOrder(Member member, List<OrderItem> orderItemList) {
         Order order = new Order();
         order.setMember(member);
-        order.setTossOrderId("order-" + UUID.randomUUID().toString());
+        order.setTossOrderId("order-" + UUID.randomUUID());
         for(OrderItem orderItem: orderItemList) {
             order.addOrderItem(orderItem);
         }

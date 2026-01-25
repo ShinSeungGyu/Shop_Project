@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>회원 탈퇴 처리</title>
+</head>
+<body>
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  var message = [[${message}]];
+  var searchUrl = [[${searchUrl}]];
+
+  if (message) {
+      alert(message);
+  }
+
+  if (searchUrl) {
+      location.href = searchUrl;
+  } else {
+      location.href = "/"; // 기본 이동 경로
+  }
+  /*]]>*/
+</script>
+</body>
+</html>

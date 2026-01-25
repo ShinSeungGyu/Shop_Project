@@ -6,10 +6,15 @@ import com.shop.dto.MemberProfileDto;
 import com.shop.entity.Member;
 import com.shop.repository.MemberRepository;
 import com.shop.service.MemberService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -117,5 +122,25 @@ public class MemberController {
             // memberProfileDto는 @ModelAttribute 덕분에 이미 모델에 있습니다.
             return "/member/profile"; // ⭐ 프로필 수정 폼을 보여주는 템플릿 이름
         }
+    }
+
+    @GetMapping("/quit")
+    public String memberQuit(Principal principal, Model model, HttpServletRequest request, HttpServletResponse response) {
+        if (principal == null) {
+            model.addAttribute("message", "로그인 정보가 없습니다.");
+            model.addAttribute("searchUrl", "/login");
+        } else {
+            String currentUserName = principal.getName();
+            memberService.deleteMember(currentUserName);
+            // 세션 무효화 처리를 위해 로그아웃 URL로 보내거나 메시지 처리 후 메인으로 보냄
+            model.addAttribute("message", "회원 탈퇴가 성공적으로 완료되었습니다.");
+            model.addAttribute("searchUrl", "/"); // 탈퇴 후 이동할 경로
+
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                new SecurityContextLogoutHandler().logout(request, response, auth);
+            }
+        }
+        return "member/memberQuit"; // templates/member/quit.html
     }
 }

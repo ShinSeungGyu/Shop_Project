@@ -60,4 +60,12 @@ public class MemberService implements UserDetailsService {
                 .build();
     }
 
+    public void deleteMember(String email) {
+        // 이메일(또는 username)로 회원을 찾아 삭제
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회원이 존재하지 않습니다."));
+
+        memberRepository.delete(member);
+    }
+
 }
