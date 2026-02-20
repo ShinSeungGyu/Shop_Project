@@ -117,6 +117,7 @@
             }
         });
     }
+
     async function orders() {
       var token = $("meta[name='_csrf']").attr("content");
       var header = $("meta[name='_csrf_header']").attr("content");
@@ -184,12 +185,15 @@
           if (jqXHR.status == '401') {
             alert('로그인 후 이용해주세요');
             location.href = '/members/login';
-          } else {
-                alert(jqXHR.responseJSON.message || '주문 처리 중 오류가 발생했습니다.');
+          }
+          else {
+            // responseJSON이 있으면 message를, 없으면 기본 문구를 출력
+            alert(jqXHR.responseJSON?.message || '주문 처리 중 오류가 발생했습니다.');
           }
         }
       });
     }
+
   </script>
 </th:block>
 

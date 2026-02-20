@@ -1,5 +1,7 @@
 package com.shop.controller;
 
+import com.shop.repository.MemberRepository;
+import com.shop.entity.Member;
 import com.shop.dto.CartDetailDto;
 import com.shop.dto.CartItemDto;
 import com.shop.dto.CartOrderDto;
@@ -8,11 +10,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 import java.security.Principal;
@@ -22,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CartController {
     private final CartService cartService;
+    private final MemberRepository memberRepository;
 
     @PostMapping("/cart")
     public @ResponseBody ResponseEntity order(@RequestBody @Valid CartItemDto cartItemDto, BindingResult bindingResult, Principal principal){
@@ -77,18 +82,24 @@ public class CartController {
     @PostMapping("/cart/orders")
     public @ResponseBody ResponseEntity orderCartItem(@RequestBody CartOrderDto cartOrderDto, Principal principal){
         List<CartOrderDto> cartOrderDtoList = cartOrderDto.getCartOrderDtoList();
+        Member member = memberRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
         if(cartOrderDtoList == null || cartOrderDtoList.size() == 0){
-            return new ResponseEntity<>("주문할 상품을 선택해주세요", HttpStatus.FORBIDDEN);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "주문할 상품을 선택해주세요"));
+        }
+
+        if(member.getAddress() == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "프로필에 주소를 입력해주세요."));
         }
 
         for(CartOrderDto cartOrder : cartOrderDtoList){
             if(!cartService.validateCartItem(cartOrder.getCartItemId(), principal.getName() )){
-                return new ResponseEntity<>("주문 권한이 없습니다", HttpStatus.FORBIDDEN);
+                ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "주문 권한이 없습니다."));
             }
         }
-
         Map<String, Object> order = cartService.orderCartItem(cartOrderDtoList, principal.getName());
+
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
 }
