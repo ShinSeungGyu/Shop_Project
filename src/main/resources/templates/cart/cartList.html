@@ -189,6 +189,9 @@
           else {
             // responseJSON이 있으면 message를, 없으면 기본 문구를 출력
             alert(jqXHR.responseJSON?.message || '주문 처리 중 오류가 발생했습니다.');
+            if (jqXHR.responseJSON.message == "프로필에 주소를 입력해주세요.") {
+              location.href = '/members/profile';
+            }
           }
         }
       });
