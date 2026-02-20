@@ -74,10 +74,7 @@ public class CartService {
         CartItem cartItem = cartItemRepository.findById(cartItemId).orElseThrow(EntityNotFoundException::new);
         Member savedMember = cartItem.getCart().getMember();
 
-        if (!StringUtils.equals(curMember.getEmail(), savedMember.getEmail())) {
-            return false;
-        }
-        return true;
+        return StringUtils.equals(curMember.getEmail(), savedMember.getEmail());
     }
 
     public void updateCartItemCount(Long cartItemId, int count) {
@@ -108,11 +105,11 @@ public class CartService {
         // 주문명 구성
         String orderName;
         if (itemCount == 1) {
-            orderName = itemNames.get(0); // 상품이 하나면 그 상품명 그대로 사용
+            orderName = itemNames.getFirst(); // 상품이 하나면 그 상품명 그대로 사용
         } else {
             // 상품이 여러 개면 "첫 번째 상품명 외 N건" 형태로 구성
             // 예: "멋진 상품-789 외 2건"
-            orderName = itemNames.get(0) + " 외 " + (itemCount - 1) + "건";
+            orderName = itemNames.getFirst() + " 외 " + (itemCount - 1) + "건";
         }
         Map<String, Object> tossOrder = orderService.orders(orderDtoList, email, orderName); //장바구니에 담은 상품을 주문
         return tossOrder;

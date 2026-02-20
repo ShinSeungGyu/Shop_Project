@@ -20,4 +20,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>{
     @Query("select o from Order o " + "where o.tossOrderId = :orderId")
     Order findTossOrder(@Param("orderId") String orderId);
 
+    @Query("select distinct o from Order o join fetch o.orderItems oi join fetch oi.item")
+    List<Order> findAllWithItems();
+
 }

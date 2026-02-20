@@ -23,7 +23,10 @@ public class Order extends BaseEntity {
 
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="member_id")
-    private Member member;  
+    private Member member;
+
+    @Column(name="orderName")
+    private String orderName;
 
     @Column(name = "toss_order_id", unique = true, nullable = false, length = 64)
     private String tossOrderId; // Toss에서 사용하는 문자열 orderId
@@ -31,20 +34,26 @@ public class Order extends BaseEntity {
     @Column(name = "toss_paymentKey")
     private String tossPaymentKey;
 
-    private LocalDateTime orderDate;
+    private LocalDateTime orderDate; //주문날짜
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus orderStatus;
+    private OrderStatus orderStatus; //주문상태
 
     @OneToMany(mappedBy="order", cascade= CascadeType.ALL, orphanRemoval=true, fetch=FetchType.LAZY)
-    private List<OrderItem> orderItems = new ArrayList<>();
+    private List<OrderItem> orderItems = new ArrayList<>(); //주문목록
+
+    @Column(name = "trackingNumber", length = 100)
+    private String trackingNumber; //운송장번호
+
+    @Column(name="courier")
+    private String courier; //배송사 코드
 
     public void addOrderItem(OrderItem orderItem) {
         orderItems.add(orderItem);
         orderItem.setOrder(this);
     }
 
-    public static Order createOrder(Member member, List<OrderItem> orderItemList) {
+    public static Order createOrder(Member member, List<OrderItem> orderItemList, String orderName) {
         Order order = new Order();
         order.setMember(member);
         order.setTossOrderId("order-" + UUID.randomUUID());
@@ -54,6 +63,7 @@ public class Order extends BaseEntity {
 
         order.setOrderStatus(OrderStatus.ORDER);
         order.setOrderDate(LocalDateTime.now());
+        order.setOrderName(orderName);
         return order;
     }
 

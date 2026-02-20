@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/layout1}" lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>쇼핑몰 관리 페이지</title>
+    <th:block layout:fragment="javascript">
+        <script>
+            function checkAll(){
+                if($("#checkall").prop("checked")){
+                    $("input[name=orderChkBox]").prop("checked",true);
+                }else{
+                    $("input[name=orderChkBox]").prop("checked",false);
+                }
+            }
+
+            function updateTracking(orderId) {
+                const token = document.querySelector('meta[name="_csrf"]').content;
+                const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+                const courier = document.getElementById('courier-' + orderId).value;
+                const trackingNum = document.getElementById('tracking-' + orderId).value;
+
+                if (!trackingNum) {
+                    alert("운송장 번호를 입력해주세요.");
+                    return;
+                }
+                fetch('/admin/orders/manage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                         [header]: token
+                    },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        trackingNumber: trackingNum,
+                        courier: courier
+                    })
+                }).then(res => {
+                    if(res.ok) {
+                        alert("송장이 등록되었습니다.");
+                        window.location.href = "/admin/orders/manage";
+                    }
+                });
+            }
+
+            function openTrackingPopup(courierCode, invoiceNumber) {
+              // 1. 팝업창 설정 (가로 500, 세로 800 정도가 적당합니다)
+              const width = 500;
+              const height = 800;
+              const left = (window.screen.width / 2) - (width / 2);
+              const top = (window.screen.height / 2) - (height / 2);
+
+              const windowFeatures = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`;
+
+              // 2. 빈 팝업창을 먼저 띄움 (이름을 'trackingPopup'으로 지정)
+              window.open('', 'trackingPopup', windowFeatures);
+
+              // 3. 숨겨진 폼에 값 세팅
+              document.getElementById('modal_t_code').value = courierCode;
+              document.getElementById('modal_t_invoice').value = invoiceNumber;
+
+              // 4. 폼 전송 (target이 팝업창 이름과 일치하므로 팝업창에 결과가 뜸)
+              document.getElementById('trackingForm').submit();
+            }
+        </script>
+    </th:block>
+
+    <th:block layout:fragment="css">
+        <style>
+            body { font-family: 'Malgun Gothic', sans-serif; margin: 0; background-color: #f4f4f4; }
+
+            .nav-links a { color: white; text-decoration: none; margin-right: 15px; font-size: 14px; }
+            .search-bar input { padding: 5px; border-radius: 4px; border: none; }
+            .search-bar button { padding: 5px 10px; background-color: #0056b3; color: white; border: none; cursor: pointer; }
+
+            /* 배너 섹션 */
+            .banner { width: 100%; height: 200px; background: linear-gradient(to right, #e0e0e0, #ffffff); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+            .banner h1 { font-size: 3rem; color: #333; font-weight: bold; }
+            .banner .black-friday { color: red; font-style: italic; }
+
+            /* 메인 컨텐츠 */
+            .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
+
+            /* 상품 카드 (두 번째 이미지 기반) */
+            .product-card { background: white; border: 1px solid #ddd; width: 300px; border-radius: 8px; overflow: hidden; margin-bottom: 30px; }
+            .product-card img { width: 100%; height: 200px; object-fit: cover; }
+            .product-info { padding: 15px; }
+            .product-title { font-size: 18px; font-weight: bold; margin: 5px 0; }
+            .product-desc { color: #666; font-size: 14px; }
+            .product-price { color: #e44d26; font-size: 20px; font-weight: bold; margin-top: 10px; }
+            .badge { display: inline-block; background: #007bff; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+
+            /* 주문 관리 테이블 (첫 번째 이미지 기반) */
+            .order-table-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow-x: auto; }
+            table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
+            th, td { border: 1px solid #ddd; padding: 10px; }
+            th { background-color: #f8f9fa; font-weight: normal; }
+            .sub-text { font-size: 11px; color: #888; }
+
+            /* 하단 페이징 */
+            .pagination { text-align: center; margin-top: 20px; }
+            .pagination button { padding: 5px 10px; border: 1px solid #ddd; background: white; cursor: pointer; }
+            .pagination .active { background: #007bff; color: white; border-color: #007bff; }
+            .pagination-container {
+                display: flex;
+                justify-content: center;
+                margin-top: 20px;
+                width: 100%;
+            }
+        </style>
+    </th:block>
+</head>
+
+<div layout:fragment="content">
+    <div class="container">
+        <h3>주문 내역 관리</h3>
+        <form id="trackingForm" action="https://info.sweettracker.co.kr/tracking/5" method="post" target="trackingPopup">
+            <input type="hidden" name="t_key" value="cpM1g0PTTEI7dghvoA7rHw">
+            <input type="hidden" name="t_code" id="modal_t_code">
+            <input type="hidden" name="t_invoice" id="modal_t_invoice">
+        </form>
+        <div class="order-table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th rowspan="2"><input type="checkbox" id="checkall" onclick="checkAll()"></th>
+                    <th rowspan="2">상태</th>
+                    <th rowspan="2">No</th>
+                    <th rowspan="2">주문번호</th>
+                    <th>상품명</th>
+                    <th rowspan="2">수량</th>
+                    <th>주문인</th>
+                    <th>판매가 (단가)</th>
+                    <th rowspan="2">송장번호 입력</th>
+                    <th>주문일</th>
+                </tr>
+                <tr>
+                    <th class="sub-text">상품코드</th>
+                    <th>수령인</th>
+                    <th class="sub-text">결제키 (Toss)</th>
+                    <th>발송기한</th>
+                </tr>
+                </thead>
+                <tbody>
+                <th:block th:each="order, stat : ${orders}">
+                    <tr>
+                        <td rowspan="2"><input type="checkbox" name="orderChkBox" th:value="${order.id}"></td>
+                        <td rowspan="2" th:text="${order.orderStatus}">결제완료</td>
+                        <td rowspan="2" th:text="${stat.count}">1</td>
+                        <td rowspan="2" th:text="${order.tossOrderId}">ORDER-12345</td>
+
+                        <td th:with="itemCount=${#lists.size(order.orderItems)}">
+                            <span th:text="${order.orderItems[0].item.itemNm}">유자 1kg</span>
+                            <span th:if="${itemCount > 1}" th:text="| 외 ${itemCount - 1}건|"></span>
+                        </td>
+
+                        <td rowspan="2" th:text="${#aggregates.sum(order.orderItems.![count])}">1</td>
+                        <td th:text="${order.member.name}">홍길동</td>
+                        <td th:text="${#numbers.formatInteger(#aggregates.sum(order.orderItems.![orderPrice * count]), 0, 'COMMA') + '원'}">
+                            19,900원
+                        </td>
+
+                        <td rowspan="2">
+                            <div th:if="${order.trackingNumber == null}">
+                                <select th:id="'courier-' + ${order.id}" style="width: 110px; font-size: 12px;">
+                                    <option value="01">우체국택배</option>
+                                    <option value="04">CJ대한통운</option>
+                                    <option value="05">한진택배</option>
+                                    <option value="06">로젠택배</option>
+                                    <option value="08">롯데택배</option>
+                                </select>
+                                <input type="text" th:id="'tracking-' + ${order.id}"
+                                       placeholder="운송장 번호" style="width: 130px;">
+                                <button type="button" class="btn-save" th:onclick="|updateTracking(${order.id})|">입력</button>
+                            </div>
+                            <div th:unless="${order.trackingNumber == null}">
+                                <span th:switch="${order.courier}">
+                                    <span th:case="'01'">우체국택배</span>
+                                    <span th:case="'04'">CJ대한통운</span>
+                                    <span th:case="'05'">한진택배</span>
+                                    <span th:case="'08'">롯데택배</span>
+                                    <span th:case="*">기타</span>
+                                </span>
+                                <input type="text" th:value="${order.trackingNumber}" style="width: 130px; background-color: #f0f0f0;" readonly>
+                                <div th:unless="${order.trackingNumber == null}">
+                                    <button type="button"
+                                            class="btn-sm"
+                                            style="cursor:pointer; background-color: #007bff; color: white; border: none; border-radius: 3px;"
+                                            th:onclick="openTrackingPopup([[${order.courier}]], [[${order.trackingNumber}]])">
+                                        조회
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                        <td th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd')}">2026-01-26</td>
+                    </tr>
+
+                    <tr>
+                        <td class="sub-text" th:text="${order.orderItems[0].item.id}">ITEM-001</td>
+                        <td th:text="${order.member.name}">홍길동</td>
+                        <td class="sub-text" th:text="${order.tossPaymentKey != null ? #strings.abbreviate(order.tossPaymentKey, 10) : '-'}">PaymentKey</td>
+                        <td th:text="${#temporals.format(order.orderDate.plusDays(2), 'yyyy-MM-dd')}">2026-01-28</td>
+                    </tr>
+                </th:block>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-container">
+            <div class="pagination">
+                <button>Previous</button>
+                <button class="active">1</button>
+                <button>Next</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</html>

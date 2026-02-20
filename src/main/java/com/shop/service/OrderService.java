@@ -1,5 +1,6 @@
 package com.shop.service;
 
+import com.shop.constant.OrderStatus;
 import com.shop.dto.OrderDto;
 import com.shop.dto.OrderHistDto;
 import com.shop.dto.OrderItemDto;
@@ -32,20 +33,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ItemImgRepository itemImgRepository;
 
-    public Long order(OrderDto orderDto,String email) {
-        Item item = itemRepository.findById(orderDto.getItemId()).orElseThrow(EntityNotFoundException::new);
-        Member member = memberRepository.findByEmail(email).orElse(null);
-
-        List<OrderItem> orderItemList = new ArrayList<>();
-        OrderItem orderItem = OrderItem.createOrderItem(item, orderDto.getCount());
-        orderItemList.add(orderItem);
-
-        Order order = Order.createOrder(member, orderItemList);
-        orderRepository.save(order);
-
-        return order.getId();
-    }
-
     @Transactional(readOnly = true)
     public Page<OrderHistDto> getOrderList(String email, Pageable pageable) {
 
@@ -64,7 +51,7 @@ public class OrderService {
             orderHistDtos.add(orderHistDto);
         }
 
-        return new PageImpl<OrderHistDto>(orderHistDtos, pageable, totalCount);
+        return new PageImpl<>(orderHistDtos, pageable, totalCount);
     }
 
     @Transactional(readOnly = true)
@@ -73,10 +60,16 @@ public class OrderService {
         Order order = orderRepository.findById(orderId).orElseThrow(EntityNotFoundException::new); //주문 확인
         Member savedMember = order.getMember(); //주문의 email을 가져옴
 
-        if(!StringUtils.equals(curMember.getEmail(), savedMember.getEmail())) { //두 정보가 일치하지 않는다면 실패
-            return false;
-        }
-        return true;
+        //두 정보가 일치하지 않는다면 실패
+        return StringUtils.equals(curMember.getEmail(), savedMember.getEmail());
+    }
+
+    public void trackingOrder(Long orderId, String courier, String trackingNumber) {
+        Order order = orderRepository.findById(orderId).orElseThrow(EntityNotFoundException::new);
+        order.setCourier(courier);
+        order.setTrackingNumber(trackingNumber);
+        order.setOrderStatus(OrderStatus.DELIVERY);
+        orderRepository.save(order);
     }
 
     //주문번호가 존재한다면 해당 주문을 취소한다.
@@ -85,6 +78,7 @@ public class OrderService {
         Order order = orderRepository.findById(orderId).orElseThrow(EntityNotFoundException::new);
         order.cancelOrder();
     }
+
     //주문을 생성하고, Toss형식에 맞춰 파라미터를 반환
     public Map<String, Object> orders(List<OrderDto> orderDtoList, String email, String orderName){
         Member member = memberRepository.findByEmail(email).orElse(null);
@@ -96,13 +90,13 @@ public class OrderService {
             orderItemList.add(orderItem);
         }
 
-        Order order = Order.createOrder(member, orderItemList);
+        Order order = Order.createOrder(member, orderItemList, orderName);
         orderRepository.save(order);
 
         Map<String, Object> tossPaymentParams = new HashMap<>();
         tossPaymentParams.put("amount", order.getTotalPrice());
         tossPaymentParams.put("orderId", order.getTossOrderId());
-        tossPaymentParams.put("orderName", orderName);
+        tossPaymentParams.put("orderName", order.getOrderName());
         tossPaymentParams.put("customerName", member.getName());
         tossPaymentParams.put("customerEmail", member.getEmail());
 

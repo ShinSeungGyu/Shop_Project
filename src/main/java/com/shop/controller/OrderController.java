@@ -1,5 +1,6 @@
 package com.shop.controller;
 import com.shop.dto.OrderHistDto;
+import com.shop.dto.TrackingUpdateDto;
 import com.shop.entity.*;
 import com.shop.repository.CartItemRepository;
 import com.shop.repository.CartRepository;
@@ -107,7 +108,7 @@ public class OrderController {
     //구매이력
     @GetMapping(value = {"/orders", "/orders/{page}"})
     public String orderHist(@PathVariable("page")Optional<Integer> page, Principal principal, Model model) {
-        Pageable pageable = PageRequest.of(page.isPresent() ? page.get() : 0, 4);
+        Pageable pageable = PageRequest.of(page.orElse(0), 4);
         Page<OrderHistDto> ordersHistDtoList = orderService.getOrderList(principal.getName(), pageable);
         model.addAttribute("orders", ordersHistDtoList);
         model.addAttribute("page", pageable.getPageNumber());
@@ -137,5 +138,26 @@ public class OrderController {
         }
         orderService.cancelOrder(orderId);
         return new ResponseEntity<>(orderId, HttpStatus.OK);
+    }
+
+    @GetMapping("/admin/orders/manage")
+    public String orderManage(Principal principal, Model model) {
+        List<Order> orders = orderRepository.findAllWithItems();
+        model.addAttribute("orders",orders);
+        return "/order/orderManage";
+    }
+
+    @PostMapping("/admin/orders/manage")
+    public ResponseEntity trackingUpdate(@RequestBody TrackingUpdateDto request) {
+
+        Long orderId = request.getOrderId();
+        String courier = request.getCourier();
+        String trackingNumber = request.getTrackingNumber();
+        System.out.println(orderId);
+        System.out.println(courier);
+        System.out.println(trackingNumber);
+
+        orderService.trackingOrder(orderId, courier, trackingNumber);
+        return ResponseEntity.ok().build();
     }
 }

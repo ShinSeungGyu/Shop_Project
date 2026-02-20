@@ -44,6 +44,26 @@
                 }
       });
     }
+
+    function openTrackingPopup(courierCode, invoiceNumber) {
+      // 1. 팝업창 설정 (가로 500, 세로 800 정도가 적당합니다)
+      const width = 500;
+      const height = 800;
+      const left = (window.screen.width / 2) - (width / 2);
+      const top = (window.screen.height / 2) - (height / 2);
+
+      const windowFeatures = `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`;
+
+      // 2. 빈 팝업창을 먼저 띄움 (이름을 'trackingPopup'으로 지정)
+      window.open('', 'trackingPopup', windowFeatures);
+
+      // 3. 숨겨진 폼에 값 세팅
+      document.getElementById('modal_t_code').value = courierCode;
+      document.getElementById('modal_t_invoice').value = invoiceNumber;
+
+      // 4. 폼 전송 (target이 팝업창 이름과 일치하므로 팝업창에 결과가 뜸)
+      document.getElementById('trackingForm').submit();
+    }
   </script>
 </th:block>
 
@@ -83,7 +103,11 @@
 
 <div layout:fragment="content" class="content-mg">
   <h2 class="mb-4">구매 이력</h2>
-
+  <form id="trackingForm" action="https://info.sweettracker.co.kr/tracking/5" method="post" target="trackingPopup">
+    <input type="hidden" name="t_key" value="cpM1g0PTTEI7dghvoA7rHw">
+    <input type="hidden" name="t_code" id="modal_t_code">
+    <input type="hidden" name="t_invoice" id="modal_t_invoice">
+  </form>
   <div th:each="order : ${orders.getContent()}">
     <div class="d-flex mb-3 align-self-center">
       <h4 th:text="${order.orderDate} + ' 주문'"></h4>
@@ -110,6 +134,14 @@
             <span th:text="${orderItem.count} + '개'"></span>
           </div>
         </div>
+      </div>
+      <div th:unless="${order.trackingNumber == null}">
+        <button type="button"
+                class="btn-sm"
+                style="cursor:pointer; background-color: #007bff; color: white; border: none; border-radius: 3px;"
+                th:onclick="openTrackingPopup([[${order.courier}]], [[${order.trackingNumber}]])">
+          배송조회
+        </button>
       </div>
     </div>
   </div>

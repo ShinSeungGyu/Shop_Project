@@ -30,7 +30,7 @@ public class ItemService {
     private final ItemImgService itemImgService;
     private final ItemImgRepository itemImgRepository;
 
-    public Long saveItem(ItemFormDto itemFormDto, List<MultipartFile> itemImgFileList) throws Exception {
+    public void saveItem(ItemFormDto itemFormDto, List<MultipartFile> itemImgFileList) throws Exception {
         Item item = itemFormDto.createItem();
         itemRepository.save(item);
 
@@ -45,7 +45,6 @@ public class ItemService {
             }
             itemImgService.saveItemImg(itemImg, itemImgFileList.get(i));
         }
-        return item.getId();
     }
     //------------------------------------------------------------------------------------------------------
     @Transactional(readOnly=true)
@@ -63,7 +62,7 @@ public class ItemService {
         return itemFormDto;
     }
     //------------------------------------------------------------------------------------------------------
-    public Long updateItem(ItemFormDto itemFormDto, List<MultipartFile> itemImgFileList) throws Exception{
+    public void updateItem(ItemFormDto itemFormDto, List<MultipartFile> itemImgFileList) throws Exception{
 
         Item item = itemRepository.findById(itemFormDto.getId()).orElseThrow(EntityNotFoundException::new);
         item.updateItem(itemFormDto);
@@ -72,7 +71,6 @@ public class ItemService {
         for(int i=0; i<itemImgFileList.size(); i++) {
             itemImgService.updateItemImg(itemImgIds.get(i), itemImgFileList.get(i));
         }
-        return item.getId();
     }
     //------------------------------------------------------------------------------------------------------
     @Transactional(readOnly = true)
